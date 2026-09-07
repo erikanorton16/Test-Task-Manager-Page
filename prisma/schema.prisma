@@ -1,0 +1,84 @@
+// Aloft Passenger Atlas — shared passenger profile database.
+//
+// SQLite by default (single-server, persistent-disk friendly). To run on a
+// platform with an ephemeral filesystem (e.g. Vercel), switch the provider
+// below to "postgresql" and point DATABASE_URL at a managed Postgres
+// instance -- no other changes needed.
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Passenger {
+  id     String @id @default(cuid())
+  name   String
+  photoUrl String?
+
+  // e.g. "Primary Family Member", "Guest", "Child"
+  relationship String?
+
+  dietaryPreferences String?
+  allergies          String?
+
+  seatingPreference      String?
+  temperaturePreference  String?
+  favoriteSnack          String?
+  drinkOfChoice          String?
+  blanketPillowPreference String?
+
+  notes String?
+
+  archived Boolean @default(false)
+
+  updatedBy String?
+  updatedAt DateTime @updatedAt
+  createdBy String?
+  createdAt DateTime @default(now())
+
+  tags       Tag[]       @relation("PassengerTags")
+  mealLogs   MealLog[]
+  flightLogs FlightLog[]
+
+  @@index([name])
+}
+
+model Tag {
+  id   String @id @default(cuid())
+  name String @unique
+
+  passengers Passenger[] @relation("PassengerTags")
+}
+
+model MealLog {
+  id          String   @id @default(cuid())
+  passengerId String
+  passenger   Passenger @relation(fields: [passengerId], references: [id], onDelete: Cascade)
+
+  date  DateTime
+  item  String
+  notes String?
+
+  createdBy String?
+  createdAt DateTime @default(now())
+
+  @@index([passengerId, date])
+}
+
+model FlightLog {
+  id          String   @id @default(cuid())
+  passengerId String
+  passenger   Passenger @relation(fields: [passengerId], references: [id], onDelete: Cascade)
+
+  date       DateTime
+  flightInfo String?
+  notes      String?
+
+  createdBy String?
+  createdAt DateTime @default(now())
+
+  @@index([passengerId, date])
+}
